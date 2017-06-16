@@ -18,9 +18,18 @@ function Path(data) {
 	self.stroke = data.stroke;
 	self.fill = data.fill;
 
-	self.draw = function(ctx) {
+	self.draw = function(ctx, mod) {
 		if (self.fill) {
-			ctx.fillStyle = self.fill;
+			var f = self.fill;
+			if (mod && mod.fill) {
+				f = mod.fill(f);
+			}
+			var col = "rgba(";
+			for (var i = 0; i < 3; ++i) { 
+				col += Math.round(255*f[i]) + ",";
+			}
+			col += f[3] + ")";
+			ctx.fillStyle = col;
 			ctx.fill(self.path);
 		}
 		if (self.stroke) {
@@ -29,6 +38,23 @@ function Path(data) {
 			ctx.stroke(self.path);
 		}
 	};
+}
+
+function mulmv(m, v) {
+	return [
+		v[0]*m[0] + v[1]*m[1] + m[4],
+		v[0]*m[2] + v[1]*m[3] + m[5]
+	];
+}
+
+function mulimv(m, v) {
+	var d = 1.0*(m[0]*m[3] - m[1]*m[2]);
+	var im = [m[3]/d,-m[1]/d,-m[2]/d,m[0]/d];
+	var r = [v[0]-m[4],v[1]-m[5]];
+	return [
+		r[0]*im[0] + r[1]*im[1],
+		r[0]*im[2] + r[1]*im[3]
+	];
 }
 
 function Transformation() {
@@ -67,21 +93,10 @@ function Transformation() {
 		var m = self.accum;
 		ctx.setTransform(m[0],m[1],m[2],m[3],m[4],m[5]);
 	};
-	self.forward = function (vi) {
-		var m = self.accum;
-		return [
-			vi[0]*m[0] + vi[1]*m[1] + m[4],
-			vi[0]*m[2] + vi[1]*m[3] + m[5]
-		];
+	self.forward = function (v) {
+		return mulmv(self.accum, v);
 	};
-	self.backward = function (vi) {
-		var m = self.accum;
-		var d = 1.0*(m[0]*m[3] - m[1]*m[2]);
-		var im = [m[3]/d,-m[1]/d,-m[2]/d,m[0]/d];
-		var vo = [vi[0]-m[4],vi[1]-m[5]];
-		return [
-			vo[0]*im[0] + vo[1]*im[1],
-			vo[0]*im[2] + vo[1]*im[3]
-		];
+	self.backward = function (v) {
+		return mulimv(self.accum, v);
 	};
 }
