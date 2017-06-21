@@ -4,7 +4,7 @@ function Path(data) {
 		data = JSON.parse(data);
 	}
 	self.points = data.points;
-	{
+	if (self.points.length >= 2) {
 		var path = new Path2D();
 		var p = self.points;
 		path.moveTo(p[0], p[1]);
@@ -13,6 +13,18 @@ function Path(data) {
 			path.bezierCurveTo(p[b+0], p[b+1], p[b+2], p[b+3], p[b+4], p[b+5]);
 		}
 		self.path = path;
+	}
+	if (self.points.length >= 2) {
+		var p = self.points;
+		var l = p[0], r = p[0], d = p[1], u = p[1];
+		for (var i = 0; i < p.length/2; ++i) {
+			var x = p[2*i], y = p[2*i + 1];
+			if (x < l) { l = x; }
+			if (x > r) { r = x; }
+			if (y < d) { d = y; }
+			if (y > u) { u = y; }
+		}
+		self.bounds = [l, u, r, d];
 	}
 	
 	self.stroke = data.stroke;
